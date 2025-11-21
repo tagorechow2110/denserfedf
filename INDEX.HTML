@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denser SCM Platform - Global Logistics Comparison</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .denser-bg { background-color: #0d47a1; } /* Dark Blue */
+        .denser-primary { background-color: #1565c0; } /* Medium Blue */
+        .denser-accent { background-color: #00bcd4; } /* Teal Accent */
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); }
+        .tab-active { border-bottom: 3px solid #00bcd4; font-weight: 600; color: #0d47a1; }
+        .comparison-table th, .comparison-table td { padding: 12px 16px; text-align: left; }
+        .comparison-table th { background-color: #e3f2fd; font-weight: 700; }
+        .comparison-table tr:nth-child(even) { background-color: #f5f5f5; }
+        /* Star rating for Reliability Score */
+        .star-rating { color: gold; font-size: 1.2rem; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header & Navigation -->
+    <header class="denser-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <h1 class="text-3xl font-extrabold tracking-tight">Denser SCM</h1>
+            <nav class="mt-4 md:mt-0 space-x-6">
+                <button onclick="showSection('compare')" class="nav-link py-2 tab-active hover:text-denser-accent transition duration-200" data-section="compare">Compare & Book</button>
+                <button onclick="showSection('track')" class="nav-link py-2 hover:text-denser-accent transition duration-200" data-section="track">Track Shipment</button>
+                <button onclick="showSection('draft')" class="nav-link py-2 hover:text-denser-accent transition duration-200" data-section="draft">✨ AI Drafting</button>
+                <button onclick="showSection('analytics')" class="nav-link py-2 hover:text-denser-accent transition duration-200" data-section="analytics">Analytics</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        <div class="max-w-4xl mx-auto">
+            <div id="loadingIndicator" class="hidden denser-bg text-white p-4 rounded-lg text-center font-bold">
+                <div class="animate-spin inline-block w-6 h-6 border-4 border-t-white border-blue-500 rounded-full mr-3"></div>
+                Processing request... Please wait for AI comparison.
+            </div>
+            
+            <!-- Comparison Section (Default View) -->
+            <section id="compare-section" class="mb-10">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Multi-Carrier Comparison Engine</h2>
+                
+                <div class="bg-white p-6 rounded-xl card-shadow mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-denser-primary">Shipment Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="pickupPin" placeholder="Pickup Pincode (e.g., 560001)" class="p-3 border rounded-lg focus:ring-2 focus:ring-denser-accent">
+                        <input type="text" id="deliveryPin" placeholder="Delivery Pincode (e.g., 400001)" class="p-3 border rounded-lg focus:ring-2 focus:ring-denser-accent">
+                        <select id="packageType" class="p-3 border rounded-lg focus:ring-2 focus:ring-denser-accent">
+                            <option value="document">Document (0.5 kg)</option>
+                            <option value="small">Small Package (2 kg)</option>
+                            <option value="medium">Medium Box (5 kg)</option>
+                            <option value="heavy">Heavy Cargo (50 kg)</option>
+                        </select>
+                    </div>
+                    <button onclick="compareLogistics()" class="w-full mt-6 py-3 denser-accent text-white font-bold rounded-lg hover:bg-opacity-90 transition duration-300">
+                        Compare 100+ Carriers & Get Denser Score
+                    </button>
+                </div>
+
+                <div id="comparisonResults" class="hidden bg-white p-6 rounded-xl card-shadow">
+                    <h3 class="text-2xl font-semibold mb-4 text-denser-primary">Best Options Found</h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="comparison-table w-full border-collapse rounded-lg overflow-hidden">
+                            <thead>
+                                <tr>
+                                    <th>Carrier</th>
+                                    <th>Denser Score</th>
+                                    <th>Transit Time (Days)</th>
+                                    <th>Cost (₹)</th>
+                                    <th>Reliability (OTD)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="carrierRows">
+                                <!-- Comparison rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="recommendationCard" class="mt-6 p-4 border-l-4 border-denser-accent bg-blue-50 rounded-lg">
+                        <p class="font-bold text-denser-primary">✨ Denser AI Insight:</p>
+                        <p id="aiRecommendation">Based on 98% OTD history for this route, we recommend **Alpha Logistics** for the best balance of reliability and cost efficiency.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tracking Section -->
+            <section id="track-section" class="hidden mb-10">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Universal Shipment Tracking</h2>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <input type="text" id="trackingIdInput" placeholder="Enter Denser Tracking ID" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-denser-accent mb-4">
+                    <button onclick="trackShipment()" class="w-full py-3 denser-primary text-white font-bold rounded-lg hover:bg-opacity-90 transition duration-300">
+                        Track Shipment
+                    </button>
+                    
+                    <div id="trackingResult" class="mt-6 hidden border-t pt-4">
+                        <h3 class="text-xl font-semibold mb-3 text-denser-primary">Tracking Status: <span id="trackStatus" class="text-denser-accent"></span></h3>
+                        <p class="mb-2"><strong>Shipment ID:</strong> <span id="displayTrackId"></span></p>
+                        <p class="mb-2"><strong>Carrier:</strong> <span id="displayCarrier"></span></p>
+                        <p class="mb-4"><strong>Predicted ETA:</strong> <span id="displayEta" class="font-bold text-lg"></span></p>
+
+                        <div id="timeline" class="space-y-4">
+                            <!-- Tracking timeline steps will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- AI Drafting Section (NEW GEMINI FEATURE) -->
+            <section id="draft-section" class="hidden mb-10">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">✨ AI Document Drafting Utility</h2>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <p class="text-gray-600 mb-4">Draft professional logistics communications instantly, whether it's a delay email or a customs description.</p>
+                    
+                    <textarea id="draftingPrompt" rows="4" placeholder="Example: Draft a polite email to client 'TechCorp' informing them their shipment DS5678 is delayed by 48 hours due to customs clearance issues. Include the original ETA (3 days) and the new ETA (5 days)." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-denser-accent mb-4"></textarea>
+
+                    <button onclick="draftLogisticsDocument()" class="w-full py-3 denser-accent text-white font-bold rounded-lg hover:bg-opacity-90 transition duration-300">
+                        ✨ Generate Document Draft
+                    </button>
+
+                    <div id="draftingResult" class="mt-6 hidden border-t pt-4">
+                        <h3 class="text-xl font-semibold mb-3 text-denser-primary">Generated Draft:</h3>
+                        <div id="generatedText" class="p-4 bg-gray-100 rounded-lg whitespace-pre-wrap text-sm">
+                            <!-- Generated text will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="hidden mb-10">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Carrier Performance Analytics</h2>
+                <div class="bg-white p-6 rounded-xl card-shadow">
+                    <p class="text-gray-600 mb-4">This dashboard is where you compare aggregated data across all your shipments and carriers. It's the key to making smarter logistics decisions.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 border rounded-lg bg-blue-50">
+                            <p class="text-sm font-medium text-gray-500">Overall OTD Rate</p>
+                            <p class="text-3xl font-bold text-green-600">93.5%</p>
+                        </div>
+                        <div class="p-4 border rounded-lg bg-blue-50">
+                            <p class="text-sm font-medium text-gray-500">Average Cost/Shipment</p>
+                            <p class="text-3xl font-bold text-gray-800">₹145</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mt-6 mb-3 text-denser-primary">Carrier Scorecard (Last 30 Days)</h3>
+                    <ul class="space-y-2">
+                        <li class="p-3 bg-gray-100 rounded-lg flex justify-between items-center">
+                            <span>**Ekart (Simulated)**:</span>
+                            <span class="font-semibold text-red-600">89% OTD (Needs Improvement)</span>
+                        </li>
+                        <li class="p-3 bg-gray-100 rounded-lg flex justify-between items-center">
+                            <span>Alpha Logistics:</span>
+                            <span class="font-semibold text-green-600">96% OTD (Top Performer)</span>
+                        </li>
+                        <li class="p-3 bg-gray-100 rounded-lg flex justify-between items-center">
+                            <span>Beta Express:</span>
+                            <span class="font-semibold text-yellow-600">92% OTD (Steady)</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 denser-primary text-white p-4 text-center text-sm shadow-inner">
+        <p>User ID: <span id="displayUserId" class="font-mono">Loading...</span> | Denser SCM Platform &copy; 2025</p>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, setLogLevel, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // App State
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Utility: Exponential Backoff for API calls
+        const apiCallWithBackoff = async (payload, retries = 3, delay = 1000) => {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "AI response failed to load.";
+                        return text;
+                    } else if (response.status === 429 && i < retries - 1) {
+                        // Rate limit error, wait and retry
+                        await new Promise(resolve => setTimeout(resolve, delay * (2 ** i)));
+                    } else {
+                        // Other error, throw to exit loop
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+                } catch (error) {
+                    console.error("API call failed:", error);
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * (2 ** i)));
+                }
+            }
+            loadingIndicator.classList.add('hidden'); // Ensure loading hides on final failure
+            throw new Error("AI API call failed after multiple retries.");
+        };
+
+        const initFirebase = async () => {
+            if (!firebaseConfig) {
+                console.error("Firebase config is not available.");
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Set debug logging for Firestore
+                setLogLevel('Debug');
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('displayUserId').textContent = userId;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                    } else {
+                        // Try to sign in anonymously if custom token is not available
+                        if (!initialAuthToken) {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+
+                // Use the custom auth token if provided
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    // Fallback to anonymous sign-in if no token is available
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+                document.getElementById('displayUserId').textContent = 'Error';
+            }
+        };
+
+        // --- Core Application Logic ---
+
+        // Simulated carrier data for comparison, highlighting "Ekart" vs. "Others"
+        const carriers = [
+            { name: "Alpha Logistics", speed: 2, cost: 180, reliability: 4.8, type: 'Premium' },
+            { name: "Ekart (Simulated)", speed: 3, cost: 145, reliability: 3.9, type: 'Economy' }, // Lower reliability and speed
+            { name: "Beta Express", speed: 3, cost: 120, reliability: 4.2, type: 'Economy' },
+            { name: "Global Freight", speed: 5, cost: 250, reliability: 4.9, type: 'Bulk' }
+        ];
+
+        window.compareLogistics = async () => {
+            const pickupPin = document.getElementById('pickupPin').value.trim();
+            const deliveryPin = document.getElementById('deliveryPin').value.trim();
+            const packageType = document.getElementById('packageType').value;
+            const resultsDiv = document.getElementById('comparisonResults');
+            const carrierRows = document.getElementById('carrierRows');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            if (!pickupPin || !deliveryPin) {
+                alertUser("Please enter both pickup and delivery pincodes.");
+                return;
+            }
+            
+            loadingIndicator.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+            carrierRows.innerHTML = '';
+
+            // Simulate AI-powered Denser Score calculation and route simulation
+            const simulatedResults = carriers.map(carrier => {
+                // Adjusting score based on package type and route (simulated)
+                let adjustedCost = carrier.cost * (packageType === 'heavy' ? 2 : 1);
+                let adjustedSpeed = carrier.speed + (Math.random() > 0.8 ? 1 : 0);
+                
+                // The Denser Score is a weighted average favoring Reliability and Speed
+                let denserScore = (carrier.reliability * 0.4) + (1 / adjustedSpeed * 0.3) + (1 / adjustedCost * 0.3 * 100);
+                
+                return {
+                    ...carrier,
+                    adjustedCost: Math.round(adjustedCost * (1 + Math.random() * 0.1)), // 0-10% fluctuation
+                    adjustedSpeed: adjustedSpeed,
+                    denserScore: Math.round(denserScore * 10) / 10 // Round to one decimal
+                };
+            }).sort((a, b) => b.denserScore - a.denserScore); // Sort by Denser Score
+
+            // Get AI Recommendation (Gemini API call)
+            const prompt = `Analyze the following logistics comparison data for a shipment from ${pickupPin} to ${deliveryPin} with package type ${packageType}: ${JSON.stringify(simulatedResults)}. Provide a concise, single-paragraph summary identifying the recommended carrier and the core reason (e.g., lowest risk, best speed/cost balance) why it surpasses the "Ekart (Simulated)" option.`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "Act as a world-class logistics recommendation AI. Provide a concise, single-paragraph summary in a professional tone." }] }
+            };
+
+            let aiText = "Analyzing carrier data to provide deeper insights...";
+            try {
+                aiText = await apiCallWithBackoff(payload);
+            } catch (e) {
+                console.error("AI recommendation failed:", e);
+                aiText = "AI analysis temporarily unavailable. Please rely on the Denser Score.";
+            }
+
+            document.getElementById('aiRecommendation').textContent = aiText;
+
+
+            // Render results
+            simulatedResults.forEach(result => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-blue-50 transition duration-150';
+                
+                const reliabilityStars = '★'.repeat(Math.floor(result.reliability)) + '☆'.repeat(5 - Math.floor(result.reliability));
+                
+                row.innerHTML = `
+                    <td class="font-bold text-denser-primary">${result.name}</td>
+                    <td class="text-xl font-bold text-denser-accent">${result.denserScore}</td>
+                    <td>${result.adjustedSpeed} Days</td>
+                    <td>₹${result.adjustedCost}</td>
+                    <td>
+                        <span class="star-rating">${reliabilityStars}</span> (${result.reliability.toFixed(1)})
+                    </td>
+                    <td>
+                        <button onclick="bookShipment('${result.name}', ${result.adjustedCost}, ${result.adjustedSpeed})" class="py-1 px-3 bg-green-500 text-white rounded-full text-sm hover:bg-green-600 transition duration-300">Book</button>
+                    </td>
+                `;
+                carrierRows.appendChild(row);
+            });
+
+            loadingIndicator.classList.add('hidden');
+            resultsDiv.classList.remove('hidden');
+        };
+        
+        window.draftLogisticsDocument = async () => {
+            const prompt = document.getElementById('draftingPrompt').value.trim();
+            const resultDiv = document.getElementById('draftingResult');
+            const generatedText = document.getElementById('generatedText');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            if (!prompt) {
+                alertUser("Please enter details for the document you want to draft.");
+                return;
+            }
+
+            resultDiv.classList.add('hidden');
+            generatedText.textContent = 'Generating...';
+            loadingIndicator.classList.remove('hidden');
+
+            // Gemini API call for drafting
+            const userPrompt = `Based on the following request, draft a professional and appropriate logistics document, email, or communication: ${prompt}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { 
+                    parts: [{ text: "You are a professional logistics document drafting assistant. Generate high-quality, polite, and effective communications. Format the output clearly (e.g., as an email, letter, or simple text block)." }] 
+                }
+            };
+
+            let draftedContent;
+            try {
+                draftedContent = await apiCallWithBackoff(payload);
+            } catch (e) {
+                console.error("AI drafting failed:", e);
+                draftedContent = "Drafting service failed. Please check your prompt or try again later.";
+            }
+            
+            loadingIndicator.classList.add('hidden');
+            generatedText.textContent = draftedContent;
+            resultDiv.classList.remove('hidden');
+        };
+
+        window.bookShipment = async (carrierName, cost, speed) => {
+            if (!isAuthReady || !userId) {
+                alertUser("Authentication not complete. Please wait a moment.");
+                return;
+            }
+            
+            const pickupPin = document.getElementById('pickupPin').value.trim();
+            const deliveryPin = document.getElementById('deliveryPin').value.trim();
+            const packageType = document.getElementById('packageType').value;
+            
+            const shipmentId = 'DS' + Date.now().toString().slice(-6) + Math.random().toString(36).substring(2, 6).toUpperCase();
+            
+            const shipmentData = {
+                shipmentId: shipmentId,
+                userId: userId,
+                carrier: carrierName,
+                cost: cost,
+                speed: speed,
+                pickup: pickupPin,
+                delivery: deliveryPin,
+                packageType: packageType,
+                status: 'Manifest Created',
+                currentLocation: pickupPin,
+                history: [{ timestamp: serverTimestamp(), status: 'Order Booked via Denser SCM' }],
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                // Private data path for user shipments
+                const collectionPath = `artifacts/${appId}/users/${userId}/shipments`;
+                await addDoc(collection(db, collectionPath), shipmentData);
+                
+                alertUser(`🎉 Shipment ${shipmentId} booked with ${carrierName} for ₹${cost}! Tracking data saved.`);
+                
+                // Switch to tracking section and pre-fill ID
+                showSection('track');
+                document.getElementById('trackingIdInput').value = shipmentId;
+
+            } catch (e) {
+                console.error("Error booking shipment to Firestore:", e);
+                alertUser("Error saving shipment data. Check console for details.");
+            }
+        };
+
+        window.trackShipment = async () => {
+            if (!isAuthReady || !userId) {
+                alertUser("Authentication not complete. Please wait.");
+                return;
+            }
+
+            const trackId = document.getElementById('trackingIdInput').value.trim();
+            const trackingResultDiv = document.getElementById('trackingResult');
+            const timelineDiv = document.getElementById('timeline');
+            timelineDiv.innerHTML = '';
+            trackingResultDiv.classList.add('hidden');
+
+            if (!trackId) {
+                alertUser("Please enter a tracking ID.");
+                return;
+            }
+
+            try {
+                // Query Firestore for the shipment
+                const collectionPath = `artifacts/${appId}/users/${userId}/shipments`;
+                const q = query(collection(db, collectionPath), where("shipmentId", "==", trackId));
+                
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    alertUser(`Tracking ID "${trackId}" not found for this user.`);
+                    return;
+                }
+
+                // Get the first (and should be only) document
+                const docSnap = querySnapshot.docs[0];
+                const data = docSnap.data();
+
+                // Mocking update for live-action tracking simulation
+                const mockEvents = [
+                    { status: 'In Transit: Left Sort Facility', location: data.pickup, timeOffset: 1 },
+                    { status: 'In Transit: Arrived at Destination Hub', location: data.delivery, timeOffset: 2 },
+                    { status: 'Out for Delivery', location: data.delivery, timeOffset: 3 },
+                    { status: 'Delivered', location: data.delivery, timeOffset: 4 }
+                ];
+
+                const baseTime = data.createdAt ? data.createdAt.toDate().getTime() : Date.now() - (4 * 24 * 60 * 60 * 1000);
+                
+                // Add base history and mock events for display
+                let fullHistory = data.history.map(item => ({
+                    time: item.timestamp ? item.timestamp.toDate().toLocaleString() : 'N/A',
+                    status: item.status
+                }));
+                
+                // Add simulated progress
+                mockEvents.forEach((event, index) => {
+                    if (fullHistory.length > index + 1) return; // Skip if already logged (simulated)
+                    const eventTime = new Date(baseTime + (event.timeOffset * 24 * 60 * 60 * 1000));
+                    fullHistory.push({
+                        time: eventTime.toLocaleString(),
+                        status: event.status + (event.location ? ` (${event.location})` : '')
+                    });
+                });
+                
+                // Display Results
+                document.getElementById('displayTrackId').textContent = data.shipmentId;
+                document.getElementById('displayCarrier').textContent = data.carrier;
+                document.getElementById('trackStatus').textContent = fullHistory[fullHistory.length - 1].status;
+                document.getElementById('displayEta').textContent = `${data.speed} days (Predicted by Denser AI)`;
+                
+                fullHistory.reverse().forEach((event, index) => {
+                    const stepDiv = document.createElement('div');
+                    const isLatest = index === 0;
+                    stepDiv.className = `flex ${isLatest ? 'font-bold text-denser-primary' : 'text-gray-600'}`;
+                    
+                    stepDiv.innerHTML = `
+                        <div class="flex flex-col items-center mr-4">
+                            <div class="w-4 h-4 rounded-full ${isLatest ? 'bg-denser-accent' : 'bg-gray-400'} flex-shrink-0"></div>
+                            ${index < fullHistory.length - 1 ? '<div class="w-px h-full bg-gray-300"></div>' : ''}
+                        </div>
+                        <div>
+                            <p>${event.status}</p>
+                            <p class="text-xs ${isLatest ? 'text-denser-accent' : 'text-gray-500'}">${event.time}</p>
+                        </div>
+                    `;
+                    timelineDiv.appendChild(stepDiv);
+                });
+
+                trackingResultDiv.classList.remove('hidden');
+
+            } catch (e) {
+                console.error("Error fetching shipment from Firestore:", e);
+                alertUser("Failed to track shipment. Check console for details.");
+            }
+        };
+
+        // UI Utility Functions
+        window.showSection = (sectionId) => {
+            ['compare', 'track', 'analytics', 'draft'].forEach(id => {
+                const section = document.getElementById(`${id}-section`);
+                const nav = document.querySelector(`.nav-link[data-section="${id}"]`);
+                if (id === sectionId) {
+                    section.classList.remove('hidden');
+                    nav.classList.add('tab-active');
+                } else {
+                    section.classList.add('hidden');
+                    nav.classList.remove('tab-active');
+                }
+            });
+        };
+        
+        // Custom Alert/Message Box
+        const alertUser = (message) => {
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'fixed top-4 right-4 bg-red-600 text-white p-4 rounded-lg shadow-xl transition-opacity duration-300 z-50';
+            tempDiv.textContent = message;
+            document.body.appendChild(tempDiv);
+            setTimeout(() => {
+                tempDiv.classList.add('opacity-0');
+                tempDiv.addEventListener('transitionend', () => tempDiv.remove());
+            }, 3000);
+        };
+
+        // Initialize on load
+        window.onload = initFirebase;
+    </script>
+</body>
+</html>
